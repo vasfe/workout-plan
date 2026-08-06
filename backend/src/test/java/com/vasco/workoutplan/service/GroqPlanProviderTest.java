@@ -1,5 +1,8 @@
 package com.vasco.workoutplan.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -9,14 +12,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import com.vasco.workoutplan.model.GeneratedPlan;
-import com.vasco.workoutplan.model.Intake;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import com.vasco.workoutplan.model.GeneratedPlan;
+import com.vasco.workoutplan.model.Intake;
 
 class GroqPlanProviderTest {
 
