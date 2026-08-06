@@ -31,17 +31,20 @@ public class GroqPlanProvider implements PlanGenerationProvider {
     private final ObjectMapper objectMapper;
     private final String apiKey;
     private final String model;
+    private final WorkoutPlanPromptBuilder promptBuilder;
 
     public GroqPlanProvider(
             @Value("${ai.groq.base-url}") String baseUrl,
             @Value("${ai.groq.api-key}") String apiKey,
             @Value("${ai.groq.model}") String model,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            WorkoutPlanPromptBuilder promptBuilder
     ) {
         this.restClient = RestClient.builder().baseUrl(baseUrl).build();
         this.objectMapper = objectMapper;
         this.apiKey = apiKey;
         this.model = model;
+        this.promptBuilder = promptBuilder;
     }
 
     @Override
@@ -52,7 +55,7 @@ public class GroqPlanProvider implements PlanGenerationProvider {
                             + "and add it to backend/.env before starting the backend.");
         }
 
-        String prompt = buildPrompt(intake);
+        String prompt = promptBuilder.build(intake, "Return ONLY valid JSON matching this structure, no other text, no markdown fences.");
 
         Map<String, Object> requestBody = Map.of(
                 "model", model,
@@ -92,45 +95,4 @@ public class GroqPlanProvider implements PlanGenerationProvider {
         }
     }
 
-    private String buildPrompt(Intake intake) {
-        return """
-                Generate a workout plan as JSON matching this exact structure:
-                {
-                  "durationWeeks": <int>,
-                  "days": [
-                    {
-                      "dayNumber": <int>,
-                      "focus": "<string, e.g. Upper Body>",
-                      "exercises": [
-                        {
-                          "name": "<string>",
-                          "sets": <int>,
-                          "reps": "<string, e.g. 8-12>",
-                          "restSeconds": <int>,
-                          "equipment": "<string, e.g. none, dumbbells>",
-                          "notes": "<string>"
-                        }
-                      ]
-                    }
-                  ],
-                  "progressionNotes": "<string>"
-                }
-
-                Return ONLY valid JSON matching this structure, no other text, no markdown fences.
-
-                User context:
-                - Goals: %s
-                - Experience level: %s
-                - Days per week available: %d
-                - Equipment available: %s
-                - Height: %dcm, Weight: %dkg
-                """.formatted(
-                String.join(", ", intake.goals()),
-                intake.experienceLevel(),
-                intake.daysPerWeek(),
-                String.join(", ", intake.equipment()),
-                intake.heightCm(),
-                intake.weightKg()
-        );
-    }
 }
