@@ -70,6 +70,16 @@ Uses the same `backend/.env` file as the non-Docker run above — no separate
 docker compose up --build
 ```
 
+### AWS Lambda (optional)
+- Added a Lambda entry point (`backend/src/main/java/com/vasco/workoutplan/StreamLambdaHandler.java`) and `backend/Dockerfile.lambda` to produce a Lambda-ready image.
+- Build the shaded Lambda artifact (produces `target/*-aws.jar`) and the image:
+```bash
+# from repo root
+mvn -f backend clean package -DskipTests   # produces target/*-aws.jar (shaded classifier)
+docker build -f backend/Dockerfile.lambda -t workout-plan-lambda backend
+```
+- The Docker image uses the AWS Lambda Java base image and expects the handler `com.vasco.workoutplan.StreamLambdaHandler::handleRequest`.
+
 ## API
 
 - `POST /api/plans` — generate a plan from an `Intake` JSON body
