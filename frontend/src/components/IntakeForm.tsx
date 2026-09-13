@@ -1,4 +1,8 @@
 import { useState } from "react";
+import Autocomplete from "@mui/material/Autocomplete";
+import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
 import type { ExperienceLevel, Intake } from "../types";
 
 const GOAL_OPTIONS = ["muscle_gain", "fat_loss", "general_fitness"];
@@ -18,10 +22,6 @@ export default function IntakeForm({ onSubmit, isLoading }: IntakeFormProps) {
     const [heightCm, setHeightCm] = useState(175);
     const [weightKg, setWeightKg] = useState(75);
 
-    function toggleValue(list: string[], setList: React.Dispatch<React.SetStateAction<string[]>>, value: string) {
-        setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
-    }
-
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         onSubmit({
@@ -36,80 +36,76 @@ export default function IntakeForm({ onSubmit, isLoading }: IntakeFormProps) {
 
     return (
         <form onSubmit={handleSubmit}>
-            <fieldset>
-                <legend>Goals</legend>
-                {GOAL_OPTIONS.map((goal) => (
-                    <label key={goal}>
-                        <input
-                            type="checkbox"
-                            checked={goals.includes(goal)}
-                            onChange={() => toggleValue(goals, setGoals, goal)}
+            <Stack spacing={2}>
+                <Autocomplete
+                    multiple
+                    options={GOAL_OPTIONS}
+                    value={goals}
+                    onChange={(_, value) => setGoals(value)}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label="Goals"
+                            placeholder="Select your goals"
                         />
-                        {goal.replace("_", " ")}
-                    </label>
-                ))}
-            </fieldset>
+                    )}
+                    /////
+                />
 
-            <fieldset>
-                <legend>Equipment available</legend>
-                {EQUIPMENT_OPTIONS.map((item) => (
-                    <label key={item}>
-                        <input
-                            type="checkbox"
-                            checked={equipment.includes(item)}
-                            onChange={() => toggleValue(equipment, setEquipment, item)}
+                <Autocomplete
+                    multiple
+                    options={EQUIPMENT_OPTIONS}
+                    value={equipment}
+                    onChange={(_, value) => setEquipment(value)}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label="Equipment available"
+                            placeholder="Select equipment"
                         />
-                        {item.replace("_", " ")}
-                    </label>
-                ))}
-            </fieldset>
+                    )}
+                />
 
-            <label>
-                Experience level
-                <select
+                <TextField
+                    select
+                    label="Experience level"
                     value={experienceLevel}
                     onChange={(e) => setExperienceLevel(e.target.value as ExperienceLevel)}
+                    slotProps={{ select: { native: true } }}
                 >
                     {EXPERIENCE_OPTIONS.map((level) => (
                         <option key={level} value={level}>
                             {level}
                         </option>
                     ))}
-                </select>
-            </label>
+                </TextField>
 
-            <label>
-                Days per week
-                <input
+                <TextField
                     type="number"
-                    min={1}
-                    max={7}
+                    label="Days per week"
+                    slotProps={{ htmlInput: { min: 1, max: 7 } }}
                     value={daysPerWeek}
                     onChange={(e) => setDaysPerWeek(Number(e.target.value))}
                 />
-            </label>
 
-            <label>
-                Height (cm)
-                <input
+                <TextField
                     type="number"
+                    label="Height (cm)"
                     value={heightCm}
                     onChange={(e) => setHeightCm(Number(e.target.value))}
                 />
-            </label>
 
-            <label>
-                Weight (kg)
-                <input
+                <TextField
                     type="number"
+                    label="Weight (kg)"
                     value={weightKg}
                     onChange={(e) => setWeightKg(Number(e.target.value))}
                 />
-            </label>
 
-            <button type="submit" disabled={isLoading || goals.length === 0}>
-                {isLoading ? "Generating..." : "Generate plan"}
-            </button>
+                <Button type="submit" variant="contained" disabled={isLoading || goals.length === 0}>
+                    {isLoading ? "Generating..." : "Generate plan"}
+                </Button>
+            </Stack>
         </form>
     );
 }
