@@ -12,6 +12,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
+import formatDisplayValue from "../utils/formatDisplayValue";
 import type { PlanResponse } from "../types";
 
 interface PlanDisplayProps {
@@ -62,7 +63,7 @@ export default function PlanDisplay({ planResponse }: PlanDisplayProps) {
                                                 <TableCell>{exercise.sets}</TableCell>
                                                 <TableCell>{exercise.reps}</TableCell>
                                                 <TableCell>{exercise.restSeconds}s</TableCell>
-                                                <TableCell>{exercise.equipment && exercise.equipment !== "none" ? exercise.equipment : "—"}</TableCell>
+                                                <TableCell>{exercise.equipment && exercise.equipment !== "none" ? formatDisplayValue(exercise.equipment) : "—"}</TableCell>
                                                 <TableCell>{exercise.notes || "—"}</TableCell>
                                             </TableRow>
                                         ))}

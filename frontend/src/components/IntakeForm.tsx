@@ -3,6 +3,7 @@ import Autocomplete from "@mui/material/Autocomplete";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
+import formatDisplayValue from "../utils/formatDisplayValue";
 import type { ExperienceLevel, Intake } from "../types";
 
 const GOAL_OPTIONS = ["muscle_gain", "fat_loss", "general_fitness"];
@@ -42,6 +43,8 @@ export default function IntakeForm({ onSubmit, isLoading }: IntakeFormProps) {
                     options={GOAL_OPTIONS}
                     value={goals}
                     onChange={(_, value) => setGoals(value)}
+                    getOptionLabel={(option) => formatDisplayValue(option)}
+                    isOptionEqualToValue={(option, value) => option === value}
                     renderInput={(params) => (
                         <TextField
                             {...params}
@@ -49,7 +52,6 @@ export default function IntakeForm({ onSubmit, isLoading }: IntakeFormProps) {
                             placeholder="Select your goals"
                         />
                     )}
-                    /////
                 />
 
                 <Autocomplete
@@ -57,6 +59,8 @@ export default function IntakeForm({ onSubmit, isLoading }: IntakeFormProps) {
                     options={EQUIPMENT_OPTIONS}
                     value={equipment}
                     onChange={(_, value) => setEquipment(value)}
+                    getOptionLabel={(option) => formatDisplayValue(option)}
+                    isOptionEqualToValue={(option, value) => option === value}
                     renderInput={(params) => (
                         <TextField
                             {...params}
@@ -75,7 +79,7 @@ export default function IntakeForm({ onSubmit, isLoading }: IntakeFormProps) {
                 >
                     {EXPERIENCE_OPTIONS.map((level) => (
                         <option key={level} value={level}>
-                            {level}
+                            {formatDisplayValue(level)}
                         </option>
                     ))}
                 </TextField>
