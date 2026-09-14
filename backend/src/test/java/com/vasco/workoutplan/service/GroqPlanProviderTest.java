@@ -55,6 +55,55 @@ class GroqPlanProviderTest {
     }
 
     @Test
+    void generatePlanUsesStructuredJsonRequestForGroq() throws Exception {
+        server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/chat/completions", new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) {
+                try {
+                    String requestBody = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                    assertThat(requestBody).contains("\"temperature\":0");
+                    assertThat(requestBody).contains("\"role\":\"system\"");
+                    assertThat(requestBody).contains("Return ONLY valid JSON");
+                    assertThat(requestBody).contains("\"response_format\"");
+
+                    String rawJson = "{\"durationWeeks\":6,\"days\":[{\"dayNumber\":1,\"focus\":\"Lower Body\",\"exercises\":[{\"name\":\"Squat\",\"sets\":4,\"reps\":\"5-8\",\"restSeconds\":120,\"equipment\":\"barbell\",\"notes\":\"Drive through heels\"}]}],\"progressionNotes\":\"Increase weight carefully over 6 weeks.\"}";
+                    String responseBody = "{" +
+                            "\"choices\":[{" +
+                            "\"message\":{\"content\":\"" + rawJson.replace("\"", "\\\"") + "\"}}]}";
+
+                    byte[] bytes = responseBody.getBytes(StandardCharsets.UTF_8);
+                    exchange.getResponseHeaders().add("Content-Type", "application/json");
+                    exchange.sendResponseHeaders(200, bytes.length);
+                    try (OutputStream os = exchange.getResponseBody()) {
+                        os.write(bytes);
+                    }
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        });
+        server.start();
+
+        GroqPlanProvider provider = new GroqPlanProvider(
+                "http://localhost:" + server.getAddress().getPort(),
+                "test-key",
+                "test-model",
+                new ObjectMapper(),
+                new WorkoutPlanPromptBuilder()
+        );
+
+        provider.generatePlan(new Intake(
+                List.of("strength"),
+                Intake.ExperienceLevel.ADVANCED,
+                5,
+                List.of("barbell"),
+                175,
+                85
+        ));
+    }
+
+    @Test
     void generatePlanParsesValidGroqResponse() throws Exception {
         server = HttpServer.create(new InetSocketAddress(0), 0);
         server.createContext("/chat/completions", new HttpHandler() {

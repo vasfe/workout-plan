@@ -3,14 +3,14 @@ package com.vasco.workoutplan.service;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vasco.workoutplan.model.GeneratedPlan;
 import com.vasco.workoutplan.model.Intake;
 
@@ -55,11 +55,17 @@ public class GroqPlanProvider implements PlanGenerationProvider {
                             + "and add it to backend/.env before starting the backend.");
         }
 
-        String prompt = promptBuilder.build(intake, "Return ONLY valid JSON matching this structure, no other text, no markdown fences.");
+        String prompt = promptBuilder.build(
+                intake,
+                "Return ONLY valid JSON matching this structure. Do not include markdown fences, explanations, or extra text."
+        );
 
         Map<String, Object> requestBody = Map.of(
                 "model", model,
+                "temperature", 0,
                 "messages", List.of(
+                        Map.of("role", "system", "content",
+                                "You are a strict JSON generator. Return only a single valid JSON object for a workout plan and nothing else."),
                         Map.of("role", "user", "content", prompt)
                 ),
                 "response_format", Map.of("type", "json_object")
