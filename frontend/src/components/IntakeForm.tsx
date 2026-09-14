@@ -7,7 +7,16 @@ import formatDisplayValue from "../utils/formatDisplayValue";
 import type { ExperienceLevel, Intake } from "../types";
 
 const GOAL_OPTIONS = ["muscle_gain", "fat_loss", "general_fitness"];
-const EQUIPMENT_OPTIONS = ["none", "dumbbells", "resistance_bands", "pull_up_bar"];
+const EQUIPMENT_OPTIONS = [
+    "none",
+    "dumbbells",
+    "kettlebells",
+    "barbell",
+    "bench",
+    "resistance_bands",
+    "pull_up_bar",
+    "cable_machine",
+];
 const EXPERIENCE_OPTIONS: ExperienceLevel[] = ["BEGINNER", "INTERMEDIATE", "ADVANCED"];
 
 interface IntakeFormProps {

@@ -22,7 +22,7 @@ public class WorkoutPlanPromptBuilder {
                           "sets": <int>,
                           "reps": "<string, e.g. 8-12>",
                           "restSeconds": <int>,
-                          "equipment": "<string, e.g. none, dumbbells>",
+                          "equipment": "<string, e.g. none, dumbbells, kettlebells, bench, cable machine>",
                           "notes": "<string>"
                         }
                       ]

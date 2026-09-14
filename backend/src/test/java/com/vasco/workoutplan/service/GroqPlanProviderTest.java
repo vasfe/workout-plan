@@ -66,6 +66,8 @@ class GroqPlanProviderTest {
                     assertThat(requestBody).contains("\"role\":\"system\"");
                     assertThat(requestBody).contains("Return ONLY valid JSON");
                     assertThat(requestBody).contains("\"response_format\"");
+                    assertThat(requestBody).contains("\"type\":\"json_schema\"");
+                    assertThat(requestBody).contains("\"strict\":true");
 
                     String rawJson = "{\"durationWeeks\":6,\"days\":[{\"dayNumber\":1,\"focus\":\"Lower Body\",\"exercises\":[{\"name\":\"Squat\",\"sets\":4,\"reps\":\"5-8\",\"restSeconds\":120,\"equipment\":\"barbell\",\"notes\":\"Drive through heels\"}]}],\"progressionNotes\":\"Increase weight carefully over 6 weeks.\"}";
                     String responseBody = "{" +

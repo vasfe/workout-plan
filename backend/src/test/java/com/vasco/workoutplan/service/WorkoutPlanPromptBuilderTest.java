@@ -18,7 +18,7 @@ class WorkoutPlanPromptBuilderTest {
                 List.of("muscle gain", "fat loss"),
                 Intake.ExperienceLevel.INTERMEDIATE,
                 4,
-                List.of("dumbbells", "bench"),
+                List.of("dumbbells", "bench", "kettlebells"),
                 180,
                 80
         );
@@ -30,7 +30,7 @@ class WorkoutPlanPromptBuilderTest {
         assertThat(prompt).contains("Goals: muscle gain, fat loss");
         assertThat(prompt).contains("Experience level: INTERMEDIATE");
         assertThat(prompt).contains("Days per week available: 4");
-        assertThat(prompt).contains("Equipment available: dumbbells, bench");
+        assertThat(prompt).contains("Equipment available: dumbbells, bench, kettlebells");
         assertThat(prompt).contains("Height: 180cm, Weight: 80kg");
         assertThat(prompt).contains("no markdown fences");
     }
