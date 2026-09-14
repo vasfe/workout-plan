@@ -1,9 +1,8 @@
 package com.vasco.workoutplan.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 
 import com.vasco.workoutplan.model.Intake;

@@ -1,5 +1,6 @@
 package com.vasco.workoutplan.service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,6 +48,51 @@ public class GroqPlanProvider implements PlanGenerationProvider {
         this.promptBuilder = promptBuilder;
     }
 
+    private Map<String, Object> buildJsonSchemaResponseFormat() {
+        Map<String, Object> exerciseSchema = new LinkedHashMap<>();
+        exerciseSchema.put("type", "object");
+        exerciseSchema.put("additionalProperties", false);
+        exerciseSchema.put("properties", Map.of(
+                "name", Map.of("type", "string"),
+                "sets", Map.of("type", "integer"),
+                "reps", Map.of("type", "string"),
+                "restSeconds", Map.of("type", "integer"),
+                "equipment", Map.of("type", "string"),
+                "notes", Map.of("type", "string")
+        ));
+        exerciseSchema.put("required", List.of("name", "sets", "reps", "restSeconds", "equipment", "notes"));
+
+        Map<String, Object> daySchema = new LinkedHashMap<>();
+        daySchema.put("type", "object");
+        daySchema.put("additionalProperties", false);
+        daySchema.put("properties", Map.of(
+                "dayNumber", Map.of("type", "integer"),
+                "focus", Map.of("type", "string"),
+                "exercises", Map.of("type", "array", "items", exerciseSchema)
+        ));
+        daySchema.put("required", List.of("dayNumber", "focus", "exercises"));
+
+        Map<String, Object> planSchema = new LinkedHashMap<>();
+        planSchema.put("type", "object");
+        planSchema.put("additionalProperties", false);
+        planSchema.put("properties", Map.of(
+                "durationWeeks", Map.of("type", "integer"),
+                "days", Map.of("type", "array", "items", daySchema),
+                "progressionNotes", Map.of("type", "string")
+        ));
+        planSchema.put("required", List.of("durationWeeks", "days", "progressionNotes"));
+
+        Map<String, Object> jsonSchema = new LinkedHashMap<>();
+        jsonSchema.put("name", "workout_plan");
+        jsonSchema.put("strict", true);
+        jsonSchema.put("schema", planSchema);
+
+        Map<String, Object> responseFormat = new LinkedHashMap<>();
+        responseFormat.put("type", "json_schema");
+        responseFormat.put("json_schema", jsonSchema);
+        return responseFormat;
+    }
+
     @Override
     public GeneratedPlan generatePlan(Intake intake) {
         if (apiKey == null || apiKey.isBlank()) {
@@ -55,50 +101,74 @@ public class GroqPlanProvider implements PlanGenerationProvider {
                             + "and add it to backend/.env before starting the backend.");
         }
 
-        String prompt = promptBuilder.build(
+        String basePrompt = promptBuilder.build(
                 intake,
-                "Return ONLY valid JSON matching this structure. Do not include markdown fences, explanations, or extra text."
+                "Return ONLY valid JSON matching the required schema exactly. Do not include markdown fences, explanations, or extra text."
         );
 
-        Map<String, Object> requestBody = Map.of(
-                "model", model,
-                "temperature", 0,
-                "messages", List.of(
-                        Map.of("role", "system", "content",
-                                "You are a strict JSON generator. Return only a single valid JSON object for a workout plan and nothing else."),
-                        Map.of("role", "user", "content", prompt)
-                ),
-                "response_format", Map.of("type", "json_object")
-        );
+        String lastError = null;
+        for (int attempt = 0; attempt < 2; attempt++) {
+            List<Map<String, String>> messages = new java.util.ArrayList<>();
+            messages.add(Map.of("role", "system", "content",
+                    "You are a strict JSON generator. Return only a single valid JSON object that matches the provided schema exactly and nothing else."));
+            if (attempt == 0) {
+                messages.add(Map.of("role", "user", "content", basePrompt));
+            } else {
+                messages.add(Map.of("role", "user", "content",
+                        basePrompt + "\n\nThe previous response was rejected by the JSON validator. Fix it and return only the JSON object. "
+                                + "Validation error: " + lastError + "\nDo not add commentary, markdown fences, or any text outside the JSON payload."));
+            }
 
-        JsonNode response;
-        try {
-            response = restClient.post()
-                    .uri("/chat/completions")
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
-                    .body(requestBody)
-                    .retrieve()
-                    .body(JsonNode.class);
-        } catch (RestClientResponseException e) {
-            throw new IllegalStateException(
-                    "Groq API call failed (HTTP " + e.getStatusCode() + "): " + e.getResponseBodyAsString(), e);
+            Map<String, Object> requestBody = Map.of(
+                    "model", model,
+                    "temperature", 0,
+                    "messages", messages,
+                    "response_format", buildJsonSchemaResponseFormat()
+            );
+
+            JsonNode response;
+            try {
+                response = restClient.post()
+                        .uri("/chat/completions")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
+                        .body(requestBody)
+                        .retrieve()
+                        .body(JsonNode.class);
+            } catch (RestClientResponseException e) {
+                String payload = e.getResponseBodyAsString();
+                boolean shouldRetryForValidation = attempt < 1
+                        && payload != null
+                        && (payload.contains("json_validate_failed") || payload.contains("Failed to validate JSON"));
+                if (shouldRetryForValidation) {
+                    lastError = payload;
+                    continue;
+                }
+                throw new IllegalStateException(
+                        "Groq API call failed (HTTP " + e.getStatusCode() + "): " + payload, e);
+            }
+
+            if (response == null) {
+                throw new IllegalStateException("Groq API returned an empty response");
+            }
+
+            String rawJson = response
+                    .path("choices").path(0)
+                    .path("message").path("content")
+                    .asText();
+
+            try {
+                return objectMapper.readValue(rawJson, GeneratedPlan.class);
+            } catch (Exception e) {
+                if (attempt < 1) {
+                    lastError = "Returned content could not be parsed as the expected plan JSON: " + e.getMessage();
+                    continue;
+                }
+                throw new IllegalStateException(
+                        "AI response did not match the expected plan schema: " + e.getMessage(), e);
+            }
         }
 
-        if (response == null) {
-            throw new IllegalStateException("Groq API returned an empty response");
-        }
-
-        String rawJson = response
-                .path("choices").path(0)
-                .path("message").path("content")
-                .asText();
-
-        try {
-            return objectMapper.readValue(rawJson, GeneratedPlan.class);
-        } catch (Exception e) {
-            throw new IllegalStateException(
-                    "AI response did not match the expected plan schema: " + e.getMessage(), e);
-        }
+        throw new IllegalStateException("Groq API failed to return a valid workout plan after retrying.");
     }
 
 }
