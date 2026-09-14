@@ -19,6 +19,13 @@ const EQUIPMENT_OPTIONS = [
 ];
 const EXPERIENCE_OPTIONS: ExperienceLevel[] = ["BEGINNER", "INTERMEDIATE", "ADVANCED"];
 
+function normalizeNumberInput(value: string) {
+    if (value === "") return "";
+
+    const normalized = value.replace(/^0+(?=\d)/, "");
+    return normalized === "" ? "0" : normalized;
+}
+
 interface IntakeFormProps {
     onSubmit: (intake: Intake) => void | Promise<void>;
     isLoading: boolean;
@@ -28,19 +35,19 @@ export default function IntakeForm({ onSubmit, isLoading }: IntakeFormProps) {
     const [goals, setGoals] = useState<string[]>([]);
     const [equipment, setEquipment] = useState<string[]>([]);
     const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>("BEGINNER");
-    const [daysPerWeek, setDaysPerWeek] = useState(3);
-    const [heightCm, setHeightCm] = useState(175);
-    const [weightKg, setWeightKg] = useState(75);
+    const [daysPerWeek, setDaysPerWeek] = useState("3");
+    const [heightCm, setHeightCm] = useState("175");
+    const [weightKg, setWeightKg] = useState("75");
 
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         onSubmit({
             goals,
             experienceLevel,
-            daysPerWeek: Number(daysPerWeek),
+            daysPerWeek: Number(daysPerWeek || 0),
             equipment,
-            heightCm: Number(heightCm),
-            weightKg: Number(weightKg),
+            heightCm: Number(heightCm || 0),
+            weightKg: Number(weightKg || 0),
         });
     }
 
@@ -98,21 +105,21 @@ export default function IntakeForm({ onSubmit, isLoading }: IntakeFormProps) {
                     label="Days per week"
                     slotProps={{ htmlInput: { min: 1, max: 7 } }}
                     value={daysPerWeek}
-                    onChange={(e) => setDaysPerWeek(Number(e.target.value))}
+                    onChange={(e) => setDaysPerWeek(normalizeNumberInput(e.target.value))}
                 />
 
                 <TextField
                     type="number"
                     label="Height (cm)"
                     value={heightCm}
-                    onChange={(e) => setHeightCm(Number(e.target.value))}
+                    onChange={(e) => setHeightCm(normalizeNumberInput(e.target.value))}
                 />
 
                 <TextField
                     type="number"
                     label="Weight (kg)"
                     value={weightKg}
-                    onChange={(e) => setWeightKg(Number(e.target.value))}
+                    onChange={(e) => setWeightKg(normalizeNumberInput(e.target.value))}
                 />
 
                 <Button type="submit" variant="contained" disabled={isLoading || goals.length === 0}>
